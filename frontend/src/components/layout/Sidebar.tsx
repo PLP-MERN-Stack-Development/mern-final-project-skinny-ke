@@ -8,15 +8,15 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  Collapse,
   Divider,
   Avatar,
   Chip,
-  Collapse,
 } from '@mui/material'
 import {
   Dashboard as DashboardIcon,
   Folder as FolderIcon,
-  CheckCircle as CheckCircleIcon,
+  Assignment as AssignmentIcon,
   CalendarToday as CalendarIcon,
   Assessment as AssessmentIcon,
   Settings as SettingsIcon,
@@ -26,7 +26,6 @@ import {
 } from '@mui/icons-material'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useWorkspaces } from '@/hooks/useWorkspaces'
 
 interface SidebarProps {
   onClose?: () => void
@@ -36,8 +35,14 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const { workspaces, isLoading } = useWorkspaces()
+
   const [workspacesOpen, setWorkspacesOpen] = useState(true)
+
+  // Mock workspaces - will be replaced with real data
+  const workspaces = [
+    { id: '1', name: 'Marketing Team', slug: 'marketing-team', role: 'admin' },
+    { id: '2', name: 'Development', slug: 'development', role: 'member' },
+  ]
 
   const menuItems = [
     {
@@ -47,7 +52,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     },
     {
       text: 'Tasks',
-      icon: <CheckCircleIcon />,
+      icon: <AssignmentIcon />,
       path: '/tasks',
     },
     {
@@ -64,182 +69,54 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   const handleNavigation = (path: string) => {
     navigate(path)
-    onClose?.()
+    if (onClose) onClose()
   }
 
-  const handleWorkspaceToggle = () => {
-    setWorkspacesOpen(!workspacesOpen)
+  const handleWorkspaceClick = (workspaceId: string) => {
+    navigate(`/workspaces/${workspaceId}`)
+    if (onClose) onClose()
   }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Logo and User Info */}
+      {/* Logo and Brand */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-            CollabTask
-          </Typography>
-        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+          CollabTask
+        </Typography>
+      </Box>
 
-        {user && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar
-              src={user.avatar}
-              alt={user.firstName}
-              sx={{ width: 32, height: 32 }}
-            >
-              {user.firstName[0]}{user.lastName[0]}
+      {/* User Info */}
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {user?.avatar ? (
+            <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
+          ) : (
+            <Avatar sx={{ width: 32, height: 32 }}>
+              {user?.firstName?.[0] || user?.email?.[0] || 'U'}
             </Avatar>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                {user.firstName} {user.lastName}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {user.email}
-              </Typography>
-            </Box>
+          )}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+              {user?.firstName} {user?.lastName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {user?.email}
+            </Typography>
           </Box>
-        )}
+        </Box>
       </Box>
 
       {/* Navigation Menu */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => handleNavigation(item.path)}
-                sx={{
-                  mx: 1,
-                  my: 0.5,
-                  borderRadius: 1,
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                    },
-                    '& .MuiListItemIcon-root': {
-                      color: 'primary.contrastText',
-                    },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 40 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-
-        <Divider sx={{ my: 1 }} />
-
-        {/* Workspaces Section */}
-        <List>
-          <ListItemButton
-            onClick={handleWorkspaceToggle}
-            sx={{ mx: 1, my: 0.5, borderRadius: 1 }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary="Workspaces" />
-            {workspacesOpen ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-
-          <Collapse in={workspacesOpen} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              {isLoading ? (
-                <ListItem sx={{ pl: 4 }}>
-                  <ListItemText primary="Loading..." />
-                </ListItem>
-              ) : (
-                workspaces?.map((workspace) => (
-                  <ListItem key={workspace._id} disablePadding>
-                    <ListItemButton
-                      selected={location.pathname === `/workspaces/${workspace.slug}`}
-                      onClick={() => handleNavigation(`/workspaces/${workspace.slug}`)}
-                      sx={{
-                        pl: 4,
-                        mx: 1,
-                        my: 0.5,
-                        borderRadius: 1,
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          '&:hover': {
-                            bgcolor: 'primary.dark',
-                          },
-                        },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 24 }}>
-                        <FolderIcon sx={{ fontSize: 18 }} />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={workspace.name}
-                        primaryTypographyProps={{
-                          variant: 'body2',
-                          noWrap: true,
-                        }}
-                      />
-                      <Chip
-                        label={`${workspace.taskCount || 0}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          height: 18,
-                          fontSize: '0.7rem',
-                          '& .MuiChip-label': {
-                            px: 0.5,
-                          },
-                        }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                ))
-              )}
-
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => handleNavigation('/workspaces/new')}
-                  sx={{
-                    pl: 4,
-                    mx: 1,
-                    my: 0.5,
-                    borderRadius: 1,
-                    color: 'primary.main',
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 24 }}>
-                    <AddIcon sx={{ fontSize: 18 }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Create Workspace"
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            </List>
-          </Collapse>
-        </List>
-      </Box>
-
-      {/* Settings */}
-      <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
-        <List>
-          <ListItem disablePadding>
+      <List sx={{ flex: 1, py: 1 }}>
+        {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
             <ListItemButton
-              selected={location.pathname === '/settings'}
-              onClick={() => handleNavigation('/settings')}
+              selected={location.pathname === item.path}
+              onClick={() => handleNavigation(item.path)}
               sx={{
                 mx: 1,
-                my: 0.5,
+                mb: 0.5,
                 borderRadius: 1,
                 '&.Mui-selected': {
                   bgcolor: 'primary.main',
@@ -254,12 +131,105 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               }}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <SettingsIcon />
+                {item.icon}
               </ListItemIcon>
-              <ListItemText primary="Settings" />
+              <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
-        </List>
+        ))}
+
+        <Divider sx={{ my: 1 }} />
+
+        {/* Workspaces Section */}
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => setWorkspacesOpen(!workspacesOpen)}
+            sx={{ mx: 1, mb: 0.5, borderRadius: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <FolderIcon />
+            </ListItemIcon>
+            <ListItemText primary="Workspaces" />
+            {workspacesOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={workspacesOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {workspaces.map((workspace) => (
+              <ListItem key={workspace.id} disablePadding>
+                <ListItemButton
+                  onClick={() => handleWorkspaceClick(workspace.id)}
+                  sx={{
+                    mx: 1,
+                    mb: 0.5,
+                    borderRadius: 1,
+                    pl: 5,
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" noWrap>
+                          {workspace.name}
+                        </Typography>
+                        <Chip
+                          label={workspace.role}
+                          size="small"
+                          variant="outlined"
+                          sx={{ height: 16, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => handleNavigation('/workspaces/new')}
+                sx={{
+                  mx: 1,
+                  mb: 0.5,
+                  borderRadius: 1,
+                  pl: 5,
+                  color: 'primary.main',
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <AddIcon />
+                </ListItemIcon>
+                <ListItemText primary="New Workspace" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+      </List>
+
+      {/* Settings */}
+      <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={() => handleNavigation('/settings')}
+            sx={{
+              mx: 1,
+              my: 0.5,
+              borderRadius: 1,
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
+        </ListItem>
       </Box>
     </Box>
   )

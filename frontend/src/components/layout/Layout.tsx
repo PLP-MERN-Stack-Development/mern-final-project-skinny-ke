@@ -1,34 +1,80 @@
-import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { ReactNode, useState } from 'react'
 import {
   Box,
-  Drawer,
   AppBar,
   Toolbar,
-  Typography,
   IconButton,
-  useMediaQuery,
+  Typography,
   useTheme,
+  useMediaQuery,
+  Drawer,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
   Notifications as NotificationsIcon,
+  Search as SearchIcon,
   AccountCircle as AccountCircleIcon,
+  Settings as SettingsIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material'
+import { useNavigate, Outlet } from 'react-router-dom'
 
 import Sidebar from './Sidebar'
 import { useAuth } from '@/hooks/useAuth'
 
 const DRAWER_WIDTH = 280
 
-const Layout = () => {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const { user, logout } = useAuth()
+interface LayoutProps {
+  children?: ReactNode
+  title?: string
+}
+
+const Layout = ({ children, title }: LayoutProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
+  }
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleProfileClick = () => {
+    handleProfileMenuClose()
+    navigate('/profile')
+  }
+
+  const handleSettingsClick = () => {
+    handleProfileMenuClose()
+    navigate('/settings')
+  }
+
+  const handleLogout = async () => {
+    handleProfileMenuClose()
+    try {
+      await logout()
+      navigate('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   const drawer = <Sidebar onClose={() => setMobileOpen(false)} />
@@ -47,6 +93,7 @@ const Layout = () => {
         }}
       >
         <Toolbar>
+          {/* Mobile menu button */}
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -57,26 +104,77 @@ const Layout = () => {
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            CollabTask
-          </Typography>
+          {/* Title */}
+          {title && (
+            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+              {title}
+            </Typography>
+          )}
 
-          {/* User Actions */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton color="inherit" aria-label="notifications">
-              <NotificationsIcon />
-            </IconButton>
+          {/* Search */}
+          <IconButton color="inherit" sx={{ mr: 1 }}>
+            <SearchIcon />
+          </IconButton>
 
-            <IconButton
-              color="inherit"
-              aria-label="account"
-              onClick={() => {
-                // TODO: Open user menu
-              }}
-            >
-              <AccountCircleIcon />
-            </IconButton>
-          </Box>
+          {/* Notifications */}
+          <IconButton color="inherit" sx={{ mr: 1 }}>
+            <NotificationsIcon />
+          </IconButton>
+
+          {/* User Menu */}
+          <IconButton
+            size="large"
+            aria-label="account of current user"
+            aria-controls="primary-search-account-menu"
+            aria-haspopup="true"
+            onClick={handleProfileMenuOpen}
+            color="inherit"
+          >
+            {user?.avatar ? (
+              <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
+            ) : (
+              <Avatar sx={{ width: 32, height: 32 }}>
+                {user?.firstName?.[0] || user?.email?.[0] || 'U'}
+              </Avatar>
+            )}
+          </IconButton>
+
+          {/* Profile Menu */}
+          <Menu
+            id="primary-search-account-menu"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            open={Boolean(anchorEl)}
+            onClose={handleProfileMenuClose}
+          >
+            <MenuItem onClick={handleProfileClick}>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Profile" />
+            </MenuItem>
+            <MenuItem onClick={handleSettingsClick}>
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Settings" />
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -84,6 +182,7 @@ const Layout = () => {
       <Box
         component="nav"
         sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+        aria-label="navigation menu"
       >
         {/* Mobile drawer */}
         <Drawer

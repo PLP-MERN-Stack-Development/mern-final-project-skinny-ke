@@ -2,16 +2,18 @@ import { Box, CircularProgress, Typography } from '@mui/material'
 
 interface LoadingSpinnerProps {
   size?: number
-  message?: string
   fullScreen?: boolean
+  message?: string
+  overlay?: boolean
 }
 
 const LoadingSpinner = ({
   size = 40,
+  fullScreen = false,
   message = 'Loading...',
-  fullScreen = false
+  overlay = false
 }: LoadingSpinnerProps) => {
-  const content = (
+  const spinner = (
     <Box
       sx={{
         display: 'flex',
@@ -43,16 +45,16 @@ const LoadingSpinner = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'rgba(255, 255, 255, 0.8)',
+          bgcolor: overlay ? 'rgba(255, 255, 255, 0.8)' : 'background.default',
           zIndex: 9999,
         }}
       >
-        {content}
+        {spinner}
       </Box>
     )
   }
 
-  return content
+  return spinner
 }
 
 export default LoadingSpinner
