@@ -10,8 +10,8 @@ import connectDB from './config/database.js';
 import logger from './utils/logger.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
+import authRoutes from './routes/auth.js';
 // Import routes (will be created later)
-// import authRoutes from './routes/auth.js';
 // import userRoutes from './routes/users.js';
 // import workspaceRoutes from './routes/workspaces.js';
 // import taskRoutes from './routes/tasks.js';
@@ -93,8 +93,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// API routes (will be uncommented as routes are created)
-// app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/auth`, authRoutes);
+// API routes
+app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/auth`, authRoutes);
 // app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/users`, userRoutes);
 // app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/workspaces`, workspaceRoutes);
 // app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/tasks`, taskRoutes);
