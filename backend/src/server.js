@@ -11,10 +11,10 @@ import logger from './utils/logger.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 import authRoutes from './routes/auth.js';
+import workspaceRoutes from './routes/workspaces.js';
+import taskRoutes from './routes/tasks.js';
 // Import routes (will be created later)
 // import userRoutes from './routes/users.js';
-// import workspaceRoutes from './routes/workspaces.js';
-// import taskRoutes from './routes/tasks.js';
 // import commentRoutes from './routes/comments.js';
 // import fileRoutes from './routes/files.js';
 
@@ -95,9 +95,9 @@ app.get('/', (req, res) => {
 
 // API routes
 app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/auth`, authRoutes);
+app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/workspaces`, workspaceRoutes);
+app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/tasks`, taskRoutes);
 // app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/users`, userRoutes);
-// app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/workspaces`, workspaceRoutes);
-// app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/tasks`, taskRoutes);
 // app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/comments`, commentRoutes);
 // app.use(`${config.server.apiPrefix}/${config.server.apiVersion}/files`, fileRoutes);
 
