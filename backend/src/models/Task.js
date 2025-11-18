@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import logger from '../utils/logger.js';
+import realtimeService from '../services/realtimeService.js';
 
 // Task schema definition
 const taskSchema = new mongoose.Schema({
@@ -619,6 +620,57 @@ taskSchema.post('remove', function(doc) {
     workspace: doc.workspace
   });
 });
+
+// Real-time broadcasting methods
+taskSchema.methods.broadcastUpdate = async function(updates, updatedBy) {
+  try {
+    realtimeService.broadcastToWorkspace(this.workspace.toString(), 'task:updated', {
+      taskId: this._id,
+      updates,
+      updatedBy,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    logger.error('Error broadcasting task update:', error);
+  }
+};
+
+taskSchema.methods.broadcastCreate = async function(createdBy) {
+  try {
+    const taskData = await this.toDetailedJSON();
+    realtimeService.broadcastToWorkspace(this.workspace.toString(), 'task:created', {
+      task: taskData,
+      createdBy,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    logger.error('Error broadcasting task creation:', error);
+  }
+};
+
+taskSchema.methods.broadcastDelete = async function(deletedBy) {
+  try {
+    realtimeService.broadcastToWorkspace(this.workspace.toString(), 'task:deleted', {
+      taskId: this._id,
+      deletedBy,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    logger.error('Error broadcasting task deletion:', error);
+  }
+};
+
+// Static method to broadcast workspace-wide events
+taskSchema.statics.broadcastWorkspaceStatsUpdate = function(workspaceId) {
+  try {
+    realtimeService.broadcastToWorkspace(workspaceId, 'workspace:stats:updated', {
+      workspaceId,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    logger.error('Error broadcasting workspace stats update:', error);
+  }
+};
 
 // Create and export the Task model
 const Task = mongoose.model('Task', taskSchema);

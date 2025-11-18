@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import 'express-async-errors';
 
 import config from './config/index.js';
@@ -18,8 +20,24 @@ import taskRoutes from './routes/tasks.js';
 // import commentRoutes from './routes/comments.js';
 // import fileRoutes from './routes/files.js';
 
+// Import real-time services
+import realtimeService from './services/realtimeService.js';
+
 // Create Express application
 const app = express();
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+const io = new Server(httpServer, {
+  cors: {
+    origin: config.cors.origin,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
+});
 
 // Global server variable for graceful shutdown
 let server;
@@ -152,16 +170,16 @@ const startServer = async () => {
     await connectDB();
 
     // Start server
-    server = app.listen(config.server.port, () => {
+    server = httpServer.listen(config.server.port, () => {
       logger.info(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
       logger.info(`📡 API available at http://${config.server.host}:${config.server.port}`);
+      logger.info(`🔌 WebSocket available at ws://${config.server.host}:${config.server.port}`);
       logger.info(`🏥 Health check at http://${config.server.host}:${config.server.port}/health`);
       logger.info(`📊 Database connected and ready`);
     });
 
-    // Socket.io integration (will be added later)
-    // import { initializeSocket } from './socket/index.js';
-    // const io = initializeSocket(server);
+    // Initialize real-time service
+    realtimeService.initialize(io);
 
     return server;
   } catch (error) {
@@ -172,9 +190,5 @@ const startServer = async () => {
 
 // Start the server
 startServer();
-
-// Socket.io integration (will be added later)
-// import { initializeSocket } from './socket/index.js';
-// const io = initializeSocket(server);
 
 export default app;

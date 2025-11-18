@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import logger from '../utils/logger.js';
+import realtimeService from '../services/realtimeService.js';
 
 // Comment schema definition
 const commentSchema = new mongoose.Schema({
@@ -408,6 +409,71 @@ commentSchema.post('remove', function(doc) {
     author: doc.author
   });
 });
+
+// Real-time broadcasting methods
+commentSchema.methods.broadcastCreate = async function(createdBy) {
+  try {
+    const task = await mongoose.model('Task').findById(this.task);
+    if (task) {
+      realtimeService.broadcastToWorkspace(task.workspace.toString(), 'comment:created', {
+        comment: await this.toDetailedJSON(),
+        taskId: this.task,
+        createdBy,
+        timestamp: new Date()
+      });
+    }
+  } catch (error) {
+    logger.error('Error broadcasting comment creation:', error);
+  }
+};
+
+commentSchema.methods.broadcastUpdate = async function(updatedBy) {
+  try {
+    const task = await mongoose.model('Task').findById(this.task);
+    if (task) {
+      realtimeService.broadcastToWorkspace(task.workspace.toString(), 'comment:updated', {
+        comment: await this.toDetailedJSON(),
+        taskId: this.task,
+        updatedBy,
+        timestamp: new Date()
+      });
+    }
+  } catch (error) {
+    logger.error('Error broadcasting comment update:', error);
+  }
+};
+
+commentSchema.methods.broadcastDelete = async function(deletedBy) {
+  try {
+    const task = await mongoose.model('Task').findById(this.task);
+    if (task) {
+      realtimeService.broadcastToWorkspace(task.workspace.toString(), 'comment:deleted', {
+        commentId: this._id,
+        taskId: this.task,
+        deletedBy,
+        timestamp: new Date()
+      });
+    }
+  } catch (error) {
+    logger.error('Error broadcasting comment deletion:', error);
+  }
+};
+
+commentSchema.methods.broadcastReaction = async function(userId, emoji, action) {
+  try {
+    const task = await mongoose.model('Task').findById(this.task);
+    if (task) {
+      realtimeService.broadcastToWorkspace(task.workspace.toString(), 'comment:reaction', {
+        commentId: this._id,
+        taskId: this.task,
+        reaction: { user: userId, emoji, action },
+        timestamp: new Date()
+      });
+    }
+  } catch (error) {
+    logger.error('Error broadcasting comment reaction:', error);
+  }
+};
 
 // Create and export the Comment model
 const Comment = mongoose.model('Comment', commentSchema);

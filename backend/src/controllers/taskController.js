@@ -164,6 +164,9 @@ export const createTask = catchAsync(async (req, res, next) => {
   // Update workspace stats
   await workspace.updateTaskStats();
 
+  // Broadcast real-time update
+  await task.broadcastCreate(userId);
+
   const detailedTask = await task.toDetailedJSON(userId);
 
   logger.task('task_created', task._id, {
@@ -227,6 +230,9 @@ export const updateTask = catchAsync(async (req, res, next) => {
     await task.logActivity('due_date_changed', userId, {}, task.dueDate, updates.dueDate);
   }
 
+  // Broadcast real-time update
+  await task.broadcastUpdate(updates, userId);
+
   const detailedTask = await task.toDetailedJSON(userId);
 
   successResponse(res, 'Task updated successfully', {
@@ -254,6 +260,9 @@ export const deleteTask = catchAsync(async (req, res, next) => {
 
   // Archive task instead of hard delete
   await task.archive(userId);
+
+  // Broadcast real-time update
+  await task.broadcastDelete(userId);
 
   successResponse(res, 'Task deleted successfully');
 });
