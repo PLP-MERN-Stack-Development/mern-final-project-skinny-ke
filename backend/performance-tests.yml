@@ -1,0 +1,165 @@
+config:
+  target: 'http://localhost:5000'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up phase"
+    # Load testing phase
+    - duration: 300
+      arrivalRate: 20
+      name: "Load testing phase"
+    # Stress testing phase
+    - duration: 120
+      arrivalRate: 50
+      name: "Stress testing phase"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+scenarios:
+  # Authentication endpoints
+  - name: "User Registration"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "perf-test-{{ $randomInt }}@example.com"
+            username: "perftest{{ $randomInt }}"
+            firstName: "Perf"
+            lastName: "Test"
+            password: "password123"
+          expect:
+            - statusCode: 201
+
+  - name: "User Login"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "perf-test-1@example.com"
+            password: "password123"
+          expect:
+            - statusCode: 200
+          capture:
+            json: "$.data.token"
+            as: "authToken"
+
+  # Workspace endpoints (requires authentication)
+  - name: "Get User Workspaces"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "perf-test-1@example.com"
+            password: "password123"
+          capture:
+            json: "$.data.token"
+            as: "authToken"
+      - get:
+          url: "/api/workspaces"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Create Workspace"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "perf-test-1@example.com"
+            password: "password123"
+          capture:
+            json: "$.data.token"
+            as: "authToken"
+      - post:
+          url: "/api/workspaces"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Performance Test Workspace {{ $randomInt }}"
+            description: "Workspace created during performance testing"
+          expect:
+            - statusCode: 201
+
+  # Task endpoints (requires authentication and workspace)
+  - name: "Get Workspace Tasks"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "perf-test-1@example.com"
+            password: "password123"
+          capture:
+            json: "$.data.token"
+            as: "authToken"
+      - get:
+          url: "/api/workspaces/workspace-id-1/tasks"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Create Task"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "perf-test-1@example.com"
+            password: "password123"
+          capture:
+            json: "$.data.token"
+            as: "authToken"
+      - post:
+          url: "/api/workspaces/workspace-id-1/tasks"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            title: "Performance Test Task {{ $randomInt }}"
+            description: "Task created during performance testing"
+            priority: "medium"
+          expect:
+            - statusCode: 201
+
+  # Real-time WebSocket connections
+  - name: "WebSocket Connection Test"
+    weight: 5
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          data:
+            token: "perf-test-token-{{ $randomInt }}"
+      - think: 10
+      - emit:
+          channel: "workspace:join"
+          data:
+            workspaceId: "workspace-id-1"
+      - think: 30
+      - emit:
+          channel: "disconnect"
+
+# Performance thresholds
+ensure:
+  p95_response_time:
+    max: 1000  # 1 second
+  max_response_time:
+    max: 5000  # 5 seconds
+  min_requests_per_second:
+    min: 10
+  max_error_rate:
+    max: 0.05  # 5% error rate
+
+# Reporting configuration
+reporting:
+  - module: 'final-stats'
+    summary: true
+    percentiles: true
+    output: './performance-results.json'

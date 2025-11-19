@@ -1,0 +1,58 @@
+# Heroku Deployment Configuration
+# This file configures Heroku deployment for CollabTask Backend
+
+# Heroku app name (change this to your actual app name)
+app: collabtask-backend-prod
+
+# Buildpacks for Node.js and MongoDB
+buildpacks:
+  - heroku/nodejs
+
+# Environment variables
+env:
+  NODE_ENV: production
+  PORT: 5000
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_EXPIRE: 7d
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+  JWT_REFRESH_EXPIRE: 30d
+  MONGODB_URI: ${MONGODB_URI}
+  REDIS_HOST: ${REDIS_HOST}
+  REDIS_PORT: ${REDIS_PORT}
+  REDIS_PASSWORD: ${REDIS_PASSWORD}
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: 587
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASS: ${SMTP_PASS}
+  EMAIL_FROM: noreply@collabtask.com
+  FRONTEND_URL: https://collabtask.com
+  CORS_ORIGIN: https://collabtask.com
+  BCRYPT_ROUNDS: 12
+  RATE_LIMIT_WINDOW: 15
+  RATE_LIMIT_MAX_REQUESTS: 100
+  LOG_LEVEL: info
+  SENTRY_DSN: ${SENTRY_DSN}
+  CACHE_TTL: 3600
+  SESSION_TTL: 86400
+  ENABLE_REAL_TIME: true
+  ENABLE_FILE_UPLOAD: true
+  ENABLE_EMAIL_NOTIFICATIONS: true
+  ENABLE_ANALYTICS: true
+
+# Add-ons (MongoDB Atlas, Redis, etc.)
+addons:
+  - plan: heroku-redis:mini
+    as: REDIS
+  - plan: papertrail:chokurei
+    as: LOGGING
+
+# Scripts to run during deployment
+scripts:
+  postdeploy: "npm run migrate"
+
+# Health check configuration
+healthcheck:
+  path: /api/health
+  timeout: 5
+  interval: 30
+  retries: 3
